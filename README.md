@@ -1,36 +1,82 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Bank App
 
-## Getting Started
+A simple responsive banking application built with Next.js, React, and Material-UI, with a backend powered by Prisma and PostgreSQL. This application allows users to view account balances, make deposits, withdraw funds, and track transaction history.
 
-First, run the development server:
+## Features
+
+- View and update account balances
+- Make deposits, withdrawals, and transfers
+- View transaction history
+- Responsive design using Material-UI
+
+## Prerequisites
+
+- [Docker](https://www.docker.com/get-started) installed
+- [Node.js](https://nodejs.org/) (v14 or above) installed
+- [Yarn](https://yarnpkg.com/) or [npm](https://www.npmjs.com/) for package management
+
+## Setup Instructions
+
+Follow the steps below to set up and run the project locally.
+
+### 1. Set up PostgreSQL with Docker
+
+First, you need to run the PostgreSQL container using Docker. This will set up a local PostgreSQL database for the application.
+
+#### Step 1: Clone the repository
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone https://github.com/Shoaib-Naseer/banking-app.git
+cd bank-app
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+#### Step 2: Run Docker Compose
+In the root of the project, run Docker Compose to start the PostgreSQL container.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+docker-compose up -d
+```
+This will start PostgreSQL and any other services defined in the docker-compose.yml file. The database should now be running locally.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+#### Step 3: Set up environment variables
+Create a .env file in the root of the project. This file will store your environment variables for database connectivity and other configurations.
 
-## Learn More
+Example .env file:
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+DATABASE_URL=postgresql://myuser:mypassword@localhost:5432/mydatabase?schema=public
+NEXT_PUBLIC_API_URL=http://localhost:3000/api
+```
+Make sure to replace username and password with your PostgreSQL credentials. You can modify these settings based on your Docker setup.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### Step 4. Install Dependencies
+Install the project dependencies using either Yarn or npm.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Using Yarn:
+```bash
+yarn install
+```
+Using npm:
+```bash
+npm install
+```
+### Step 5. Set up Prisma and migrate the database
+Run the following command to apply the database migrations. This will create the necessary tables and schema in your PostgreSQL database.
 
-## Deploy on Vercel
+```bash
+npx prisma migrate dev --name init
+```
+This command will generate the database schema and apply the migration to your PostgreSQL database.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### Step 6. Run the Application
+You can now run the development server with:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Using Yarn:
+```bash
+yarn dev
+```
+Using npm:
+```bash
+npm run dev
+```
+This will start the application at http://localhost:3000.
