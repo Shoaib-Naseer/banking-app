@@ -9,7 +9,11 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@emotion/react": "^11.13.5",
+    "@emotion/styled": "^11.13.5",
+    "@mui/material": "^6.1.9",
     "@prisma/client": "^6.0.1",
+    "ibantools": "^4.5.1",
     "next": "15.0.3",
     "pg": "^8.13.1",
     "prisma": "^6.0.1",

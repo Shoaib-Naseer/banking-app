@@ -1,24 +1,19 @@
-
 import { NextResponse } from 'next/server';
 import prisma from '../../../lib/prisma';
 
 export async function GET(request: Request) {
-  const userId = request.headers.get('user-id'); // Assume user ID is passed in headers
+  const { searchParams } = new URL(request.url);
+  const accountId = searchParams.get('accountId');
 
-  if (!userId) {
-    return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
+  // Fetch transactions for the account
+  const transactions = await prisma.transaction.findMany({
+    where: { accountId },
+    orderBy: { createdAt: 'desc' },
+  });
+
+  if (!transactions) {
+    return NextResponse.json({ error: 'No transactions found' }, { status: 404 });
   }
 
-  try {
-    const transactions = await prisma.transaction.findMany({
-      where: { userId: Number(userId) },
-      orderBy: {
-        createdAt: 'desc', // Sort by date in descending order
-      },
-    });
-
-    return NextResponse.json(transactions);
-  } catch (error) {
-    return NextResponse.json({ error: 'Error fetching statement' }, { status: 500 });
-  }
+  return NextResponse.json(transactions);
 }

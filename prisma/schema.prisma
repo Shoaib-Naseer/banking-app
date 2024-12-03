@@ -13,11 +13,23 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model Account {
+  id        String        @id @default(uuid())
+  balance   Float         @default(0)
+  userId    String        @unique
+  iban      String        @unique // Add this field
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+  transactions Transaction[]
+}
+
 
 model Transaction {
-  id        Int      @id @default(autoincrement())
-  type      String   // deposit, withdrawal, transfer
+  id        String   @id @default(uuid())
+  accountId String
+  type      String   // "DEPOSIT", "WITHDRAW", "TRANSFER"
   amount    Float
   balance   Float
   createdAt DateTime @default(now())
+  account   Account  @relation(fields: [accountId], references: [id])
 }

@@ -1,29 +1,38 @@
 import { NextResponse } from 'next/server';
 import prisma from '../../../lib/prisma';
 
+
 export async function POST(request: Request) {
-  const { amount, userId } = await request.json(); 
+  let { accountId, amount } = await request.json();
+  amount = Number(amount)
 
-  if (!amount || amount <= 0 || !userId) {
-    return NextResponse.json({ error: 'Invalid request parameters' }, { status: 400 });
+  // Fetch the account
+  const account = await prisma.account.findUnique({
+    where: { id: accountId },
+  });
+
+  if (!account) {
+    return NextResponse.json({ error: 'Account not found' }, { status: 404 });
   }
 
-  try {
-    const currentBalance = 1000;
-    const newBalance = currentBalance + amount;
+  // Update balance
+  const newBalance = account.balance + amount;
 
-    // Save the transaction to the database
-    const transaction = await prisma.transaction.create({
-      data: {
-        type: 'deposit',
-        amount,
-        balance: newBalance,
-        userId, // Link the transaction to the user
-      },
-    });
+  // Create transaction
+  await prisma.transaction.create({
+    data: {
+      accountId,
+      type: 'DEPOSIT',
+      amount,
+      balance: newBalance,
+    },
+  });
 
-    return NextResponse.json(transaction, { status: 201 });
-  } catch (error) {
-    return NextResponse.json({ error: 'Error while depositing' }, { status: 500 });
-  }
+  // Update account balance
+  const updatedAccount = await prisma.account.update({
+    where: { id: accountId },
+    data: { balance: newBalance },
+  });
+
+  return NextResponse.json(updatedAccount);
 }

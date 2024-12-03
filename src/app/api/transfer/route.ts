@@ -1,34 +1,69 @@
-
 import { NextResponse } from 'next/server';
 import prisma from '../../../lib/prisma';
+import { validateIBAN } from 'ibantools'; 
+
 
 export async function POST(request: Request) {
-  const { amount, senderUserId, recipientIban } = await request.json();
+  let { fromAccountId, toIBAN, amount } = await request.json();
+  amount = Number(amount)
 
-  if (!amount || amount <= 0 || !senderUserId || !recipientIban) {
-    return NextResponse.json({ error: 'Invalid request parameters' }, { status: 400 });
+ 
+  if (!validateIBAN(toIBAN)) {
+    return NextResponse.json({ error: 'Invalid IBAN' }, { status: 400 });
   }
 
-  try {
-    if (!/^([A-Z]{2}[0-9]{2})([A-Z0-9]{4}){2,30}$/.test(recipientIban)) {
-      return NextResponse.json({ error: 'Invalid IBAN format' }, { status: 400 });
-    }
+  const fromAccount = await prisma.account.findUnique({
+    where: { id: fromAccountId },
+  });
 
-    const currentBalance = 1000; // Replace with actual balance query
-    const newBalance = currentBalance - amount;
-
-    // Save the transaction to the database
-    const transaction = await prisma.transaction.create({
-      data: {
-        type: 'transfer',
-        amount,
-        balance: newBalance,
-        userId: senderUserId,
-      },
-    });
-
-    return NextResponse.json(transaction, { status: 201 });
-  } catch (error) {
-    return NextResponse.json({ error: 'Error while transferring' }, { status: 500 });
+  if (!fromAccount) {
+    return NextResponse.json({ error: 'Sender account not found' }, { status: 404 });
   }
+
+  if (fromAccount.balance < amount) {
+    return NextResponse.json({ error: 'Insufficient funds' }, { status: 400 });
+  }
+
+  const toAccount = await prisma.account.findUnique({
+    where: { iban: toIBAN },
+  });
+
+  if (!toAccount) {
+    return NextResponse.json({ error: 'Receiver account not found' }, { status: 404 });
+  }
+
+  // Update balances
+  const fromNewBalance = fromAccount.balance - amount;
+  const toNewBalance = toAccount.balance + amount;
+
+  // Create transactions
+  await prisma.transaction.create({
+    data: {
+      accountId: fromAccountId,
+      type: 'TRANSFER',
+      amount: -amount,
+      balance: fromNewBalance,
+    },
+  });
+
+  await prisma.transaction.create({
+    data: {
+      accountId: toAccount.id,
+      type: 'TRANSFER',
+      amount: amount,
+      balance: toNewBalance,
+    },
+  });
+
+  const updatedFromAccount = await prisma.account.update({
+    where: { id: fromAccountId },
+    data: { balance: fromNewBalance },
+  });
+
+  const updatedToAccount = await prisma.account.update({
+    where: { id: toAccount.id },
+    data: { balance: toNewBalance },
+  });
+
+  return NextResponse.json({ from: updatedFromAccount, to: updatedToAccount });
 }
